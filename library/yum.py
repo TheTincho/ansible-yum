@@ -171,7 +171,7 @@ def main():
 
     elif state == 'latest':
         for pkg in packages:
-            if not is_installed(pkg):
+            if pkg != '*' and not is_installed(pkg):
                 to_install.append(pkg)
             else:
                 to_update.append(pkg)
@@ -186,12 +186,17 @@ def main():
         changed = True
 
     if to_update:
-        old = get_version(' '.join(to_update))
-        module.run_command(cmd + ' update ' + ' '.join(to_update),
-                           check_rc=True)
-        new = get_version(' '.join(to_update))
-        if old != new:
-            changed = True
+        if len(to_update) == 1 and to_update[0] == '*':
+	    rc, _, _ = module.run_command(cmd + ' check-update')
+            changed = (rc == 100)
+            module.run_command(cmd + ' update *', check_rc=True)
+        else:
+            old = get_version(' '.join(to_update))
+            module.run_command(cmd + ' update ' + ' '.join(to_update),
+                               check_rc=True)
+            new = get_version(' '.join(to_update))
+            if old != new:
+                changed = True
 
     if to_remove:
         module.run_command(cmd + ' remove ' + ' '.join(to_remove),
